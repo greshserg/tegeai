@@ -24,44 +24,44 @@ set -o pipefail
 # =========================
 
 # ID виртуальной машины в Yandex Cloud
-INSTANCE_ID="fv4ckchobr8nevv1tjir"
+INSTANCE_ID="${INSTANCE_ID:-fv4ckchobr8nevv1tjir}"
 
 # IP, который проверяем
-TARGET_IP="158.160.254.24"
+TARGET_IP="${TARGET_IP:-158.160.254.24}"
 
 # Порт, который должен отвечать
-PORT=443
+PORT="${PORT:-443}"
 
 # Файл лога
-LOG_FILE="/var/log/yc-watchdog.log"
+LOG_FILE="${LOG_FILE:-/var/log/yc-watchdog.log}"
 
 # Lock-файл от параллельных запусков
-LOCK_FILE="/run/yc-watchdog.lock"
+LOCK_FILE="${LOCK_FILE:-/run/yc-watchdog.lock}"
 
 # Файл времени последнего действия
-COOLDOWN_FILE="/run/yc-watchdog_last_action"
+COOLDOWN_FILE="${COOLDOWN_FILE:-/run/yc-watchdog_last_action}"
 
 # Базовый URL Compute API
-COMPUTE_URL="https://compute.api.cloud.yandex.net/compute/v1"
+COMPUTE_URL="${COMPUTE_URL:-https://compute.api.cloud.yandex.net/compute/v1}"
 
 # Сколько раз подряд проверять порт
-CHECKS=3
+CHECKS="${CHECKS:-3}"
 
 # Пауза между проверками
-DELAY_BETWEEN_CHECKS=5
+DELAY_BETWEEN_CHECKS="${DELAY_BETWEEN_CHECKS:-5}"
 
 # Таймаут TCP-проверки порта
-TCP_TIMEOUT=2
+TCP_TIMEOUT="${TCP_TIMEOUT:-2}"
 
 # Cooldown между start/restart в секундах
 # 900 = 15 минут
-ACTION_COOLDOWN=900
+ACTION_COOLDOWN="${ACTION_COOLDOWN:-900}"
 
 # Делать ли restart, если ВМ RUNNING, но сервис на порту мёртв
-ALLOW_RESTART_WHEN_RUNNING="true"
+ALLOW_RESTART_WHEN_RUNNING="${ALLOW_RESTART_WHEN_RUNNING:-true}"
 
 # Python helper, который получает IAM token
-PYTHON_TOKEN_HELPER="/opt/yc-watchdog/get_iam_token.py"
+PYTHON_TOKEN_HELPER="${PYTHON_TOKEN_HELPER:-/opt/yc-watchdog/get_iam_token.py}"
 
 # =========================
 # ЛОГИРОВАНИЕ
@@ -246,8 +246,8 @@ touch_cooldown() {
 # =========================
 
 main() {
-  # Готовим /run
-  mkdir -p /run
+  # Готовим директории для lock/cooldown
+  mkdir -p "$(dirname "$LOCK_FILE")" "$(dirname "$COOLDOWN_FILE")"
 
   # Берём lock
   acquire_lock
@@ -300,4 +300,6 @@ main() {
   log "Ничего не делаем"
 }
 
-main
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main
+fi
