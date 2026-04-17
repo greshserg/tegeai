@@ -1,0 +1,19 @@
+[Unit]
+# Таймер, который запускает watchdog каждые 5 минут
+Description=Run Yandex Cloud watchdog every 5 minutes
+
+[Timer]
+# Первый запуск через 2 минуты после загрузки
+OnBootSec=2min
+
+# Повторять каждые 5 минут после прошлого запуска
+OnUnitActiveSec=5min
+
+# Какой service запускать
+Unit=yc-watchdog.service
+
+# Если сервер был выключен и пропустил запуск — догоняем
+Persistent=true
+
+[Install]
+WantedBy=timers.target
