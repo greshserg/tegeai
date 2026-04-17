@@ -1,33 +1,66 @@
-YC Watchdog — автостарт и рестарт VM в Yandex Cloud
+# YC Watchdog — автостарт и рестарт VM в Yandex Cloud
 
-Описание: Этот проект реализует watchdog для виртуальной машины в Yandex
-Cloud.
+Проект реализует watchdog для виртуальной машины в Yandex Cloud.
 
-Функции: - проверяет доступность сервера (IP:PORT) - делает несколько
-попыток - при недоступности: - запускает ВМ (start), если она
-остановлена - перезапускает (restart), если зависла - работает через
-systemd timer
+## Что делает
+- Проверяет доступность `TARGET_IP:PORT`.
+- Делает несколько попыток проверки.
+- При недоступности:
+  - запускает ВМ (`start`), если она остановлена;
+  - перезапускает ВМ (`restart`), если статус `RUNNING`, но сервис недоступен.
+- Запускается по расписанию через `systemd timer`.
 
-Как работает: systemd timer → service → скрипт → проверка порта → IAM
-token → Compute API → start/restart
+## Как работает
+`systemd timer` → `systemd service` → `yc_autostart.sh` → проверка порта → IAM token → Compute API → `start/restart`
 
-Структура: /opt/yc-watchdog/ yc_autostart.sh get_iam_token.py
-authorized_key.json
+## Структура
+```text
+/opt/yc-watchdog/
+  yc_autostart.sh
+  get_iam_token.py
+  authorized_key.json
 
-/etc/systemd/system/ yc-watchdog.service yc-watchdog.timer
+/etc/systemd/system/
+  yc-watchdog.service
+  yc-watchdog.timer
+```
 
-Установка: sudo apt update sudo apt install -y python3 python3-pip curl
-jq netcat-openbsd util-linux sudo pip3 install PyJWT cryptography
-requests
+## Установка зависимостей
+```bash
+sudo apt update
+sudo apt install -y python3 python3-pip curl jq netcat-openbsd util-linux
+sudo pip3 install PyJWT cryptography requests
+```
 
-Настройка: INSTANCE_ID=“…” TARGET_IP=“…” PORT=443
+## Настройка
+Переопределите переменные окружения или отредактируйте значения по умолчанию в `yc_autostart.sh`:
 
-Запуск: sudo systemctl daemon-reload sudo systemctl enable –now
-yc-watchdog.timer
+```bash
+export INSTANCE_ID="..."
+export TARGET_IP="..."
+export PORT=443
+```
 
-Проверка: sudo /opt/yc-watchdog/yc_autostart.sh tail -n 50
-/var/log/yc-watchdog.log
+## Запуск
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now yc-watchdog.timer
+```
 
-Cooldown: ACTION_COOLDOWN=900
+## Проверка
+```bash
+sudo /opt/yc-watchdog/yc_autostart.sh
+sudo tail -n 50 /var/log/yc-watchdog.log
+```
 
-Логи: journalctl -u yc-watchdog.service journalctl -u yc-watchdog.timer
+## Cooldown
+По умолчанию:
+```bash
+ACTION_COOLDOWN=900
+```
+
+## Логи
+```bash
+journalctl -u yc-watchdog.service
+journalctl -u yc-watchdog.timer
+```
